@@ -9,7 +9,7 @@ Foodgram — это веб-приложение, где пользователи
 ### 1. Клонирование репозитория
 ```bash
 git clone https://github.com/gentIeman/foodgram-st.git
-cd foodgram
+cd foodgram-st
 ```
 
 ### 2. Переход в папку `infra`
@@ -18,7 +18,15 @@ cd infra
 ```
 
 ### 3. Создание файла `.env`
-Создайте файл `.env` и заполните его следующими переменными окружения:
+Создайте файл `.env` с помощью команды:
+```bash
+touch .env
+```
+или откройте его для редактирования:
+```bash
+nano .env
+```
+и заполните его следующими переменными окружения:
 ```env
 POSTGRES_DB=foodgram
 POSTGRES_USER=foodgram_user
