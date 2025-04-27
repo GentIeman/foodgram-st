@@ -43,6 +43,7 @@ docker-compose up -d
 
 ### 5. Выполнение миграций, сборка статики и создание суперпользователя
 ```bash
+docker-compose exec backend python manage.py makemigrations base
 docker-compose exec backend python manage.py migrate
 docker-compose exec backend python manage.py collectstatic --noinput
 docker-compose exec backend python manage.py createsuperuser
