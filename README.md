@@ -71,9 +71,15 @@ Foodgram позволяет:
 - **Nginx**
 
 ### Frontend
-- **React :(**
+- **React** 😐
 
 ### CI/CD
 - **Docker Compose**
 - **GitHub Actions**
 
+---
+
+## Остальное
+
+- **Ссылка на Docker Hub Profile**: [Docker Hub](https://hub.docker.com/u/gentieman)
+- **Выполнил**: Шепелев Илья Алексеевич, Группа 15.27Д-ПИ04у/23б
