@@ -51,7 +51,6 @@ docker-compose up -d
 ```bash
 docker-compose exec backend python manage.py makemigrations recipes users
 docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py createsuperuser
 ```
 
 ### 6. Заполнение базы ингредиентами
@@ -59,8 +58,12 @@ docker-compose exec backend python manage.py createsuperuser
 ```bash
 docker-compose exec backend python manage.py load_ingredients
 ```
+### 8. Перезапустите Docker compose
+```bash
+docker-compose up -d
+```
 
-### 7. Доступ к приложению
+### 9. Доступ к приложению
 - **Фронтенд**: [http://localhost](http://localhost)
 - **Документация API**: [http://localhost/api/docs/](http://localhost/api/docs/)
 
