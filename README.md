@@ -43,7 +43,7 @@ POSTGRES_PORT=5432
 docker-compose up -d
 ```
 
-### 5. Выполнение миграций, сборка статики и создание суперпользователя
+### 5. Выполнение миграций
 ```bash
 docker-compose exec backend python manage.py makemigrations recipes users
 docker-compose exec backend python manage.py migrate
