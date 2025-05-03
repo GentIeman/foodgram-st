@@ -4,8 +4,6 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from recipes.models import Recipe
-from recipes.serializers import RecipeSerializer
 import base64
 from django.core.files.base import ContentFile
 
@@ -16,6 +14,7 @@ from .serializers import (
 )
 
 User = get_user_model()
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """Представление для пользователей"""
@@ -47,7 +46,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
-        
+
         serializer = self.get_serializer(
             request.user,
             data=request.data,
@@ -73,16 +72,26 @@ class UserViewSet(viewsets.ModelViewSet):
                     {'error': 'Нельзя подписаться на самого себя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if Subscription.objects.filter(user=user, author=author).exists():
+            if Subscription.objects.filter(
+                user=user,
+                author=author
+            ).exists():
                 return Response(
                     {'error': 'Вы уже подписаны на этого пользователя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            subscription = Subscription.objects.create(user=user, author=author)
-            serializer = SubscriptionSerializer(author, context={'request': request})
+            Subscription.objects.create(user=user, author=author)
+            serializer = SubscriptionSerializer(
+                author,
+                context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription = get_object_or_404(Subscription, user=user, author=author)
+        subscription = get_object_or_404(
+            Subscription,
+            user=user,
+            author=author
+        )
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -98,7 +107,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         queryset = User.objects.filter(following__user=user)
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = SubscriptionSerializer(
                 page,
@@ -132,21 +141,18 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            # Извлекаем base64 данные из строки
             format, imgstr = avatar_data.split(';base64,')
             ext = format.split('/')[-1]
-            
-            # Декодируем base64 в бинарные данные
-            data = ContentFile(base64.b64decode(imgstr), name=f'image.{ext}')
-            
-            # Обновляем аватар
+            data = ContentFile(
+                base64.b64decode(imgstr),
+                name=f'image.{ext}'
+            )
             user.avatar = data
             user.save()
-            
             serializer = self.get_serializer(user)
             return Response(serializer.data)
-        except Exception as e:
+        except (ValueError, TypeError, base64.binascii.Error):
             return Response(
                 {'error': 'Некорректный формат изображения'},
                 status=status.HTTP_400_BAD_REQUEST
-            ) 
+            )

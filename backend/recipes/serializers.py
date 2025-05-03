@@ -9,11 +9,13 @@ from django.core.files.base import ContentFile
 
 User = get_user_model()
 
+
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для пользователей"""
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
+
 
 class IngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов"""
@@ -21,15 +23,19 @@ class IngredientSerializer(serializers.ModelSerializer):
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
+
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов в рецепте"""
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
 
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
+
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания ингредиентов в рецепте"""
@@ -58,6 +64,7 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
             'amount': instance.amount
         }
 
+
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для рецептов"""
     author = UserSerializer(read_only=True)
@@ -82,14 +89,21 @@ class RecipeSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
+        return Favorite.objects.filter(
+            user=request.user,
+            recipe=obj
+        ).exists()
 
     def get_is_in_shopping_cart(self, obj):
         """Проверяет, находится ли рецепт в списке покупок"""
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return ShoppingCart.objects.filter(user=request.user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(
+            user=request.user,
+            recipe=obj
+        ).exists()
+
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания рецепта"""
@@ -112,11 +126,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Некорректный формат изображения'
             )
-        
+
         try:
             format, imgstr = value.split(';base64,')
             ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'image_{ext}')
+            data = ContentFile(
+                base64.b64decode(imgstr),
+                name=f'image_{ext}'
+            )
             return data
         except Exception:
             raise serializers.ValidationError(
@@ -130,7 +147,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'ingredients': 'Добавьте хотя бы один ингредиент'}
             )
-        
+
         ingredient_ids = [item['id'].id for item in ingredients]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
@@ -143,7 +160,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         """Создание рецепта"""
         ingredients_data = validated_data.pop('ingredients')
         validated_data.pop('author', None)
-        
+
         recipe = Recipe.objects.create(
             author=self.context['request'].user,
             name=validated_data['name'],
@@ -151,33 +168,43 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             cooking_time=validated_data['cooking_time'],
             image=validated_data['image']
         )
-        
+
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(
                 recipe=recipe,
                 ingredient=ingredient_data['id'],
                 amount=ingredient_data['amount']
             )
-        
+
         return recipe
 
     def update(self, instance, validated_data):
         """Обновление рецепта"""
         ingredients_data = validated_data.pop('ingredients')
-        
+
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get(
+            'cooking_time',
+            instance.cooking_time
+        )
         instance.image = validated_data.get('image', instance.image)
-        
+
         instance.ingredients.clear()
-        
+
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(
                 recipe=instance,
                 ingredient=ingredient_data['id'],
                 amount=ingredient_data['amount']
             )
-        
+
         instance.save()
         return instance
+
+
+class RecipeShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для краткого представления рецепта"""
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')

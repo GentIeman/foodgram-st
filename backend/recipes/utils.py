@@ -1,20 +1,26 @@
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.conf import settings
-import os
+from django.db.models import Sum
+from io import BytesIO
 
-def generate_shopping_list(
-    user,
-    ingredients,
-    recipes
-) -> HttpResponse:
+
+def generate_shopping_list(ingredients):
     """Генерация списка покупок"""
-    content = f"Список покупок для {user.username}:\n\n"
-    
-    for ingredient in ingredients:
-        content += f"- {ingredient['ingredient__name']}: {ingredient['amount']} {ingredient['ingredient__measurement_unit']}\n"
-    
-    response = HttpResponse(content, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
-    
-    return response 
+    shopping_list = BytesIO()
+
+    ingredients_data = ingredients.values(
+        'ingredient__name',
+        'ingredient__measurement_unit'
+    ).annotate(
+        total_amount=Sum('amount')
+    ).order_by('ingredient__name')
+
+    content = ['Список покупок:\n\n']
+    for item in ingredients_data:
+        content.append(
+            f'- {item["ingredient__name"]} '
+            f'({item["ingredient__measurement_unit"]}) - '
+            f'{item["total_amount"]}\n'
+        )
+
+    shopping_list.write(''.join(content).encode('utf-8'))
+    shopping_list.seek(0)
+    return shopping_list

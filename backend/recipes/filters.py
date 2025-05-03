@@ -1,10 +1,15 @@
 from django_filters import rest_framework as filters
 from .models import Recipe
 
+
 class RecipeFilter(filters.FilterSet):
     """Фильтр для рецептов"""
-    is_favorited = filters.BooleanFilter(method='filter_is_favorited')
-    is_in_shopping_cart = filters.BooleanFilter(method='filter_is_in_shopping_cart')
+    is_favorited = filters.BooleanFilter(
+        method='filter_is_favorited'
+    )
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart'
+    )
 
     class Meta:
         model = Recipe
@@ -22,4 +27,4 @@ class RecipeFilter(filters.FilterSet):
         request = self.request
         if value and request and request.user.is_authenticated:
             return queryset.filter(shopping_cart__user=request.user)
-        return queryset 
+        return queryset

@@ -1,11 +1,12 @@
 from rest_framework import permissions
 
-class RecipePermission(permissions.BasePermission):
+
+class IsAuthorOrReadOnly(permissions.BasePermission):
     """
     Кастомное разрешение для управления рецептами.
     Разрешает чтение всем, но редактирование только автору.
     """
-    
+
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS
@@ -16,4 +17,4 @@ class RecipePermission(permissions.BasePermission):
         return (
             request.method in permissions.SAFE_METHODS
             or obj.author == request.user
-        ) 
+        )

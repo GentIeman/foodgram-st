@@ -8,4 +8,4 @@ router.register('recipes', views.RecipeViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-] 
+]

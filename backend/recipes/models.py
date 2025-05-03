@@ -4,6 +4,7 @@ from django.db import models
 
 User = get_user_model()
 
+
 class Ingredient(models.Model):
     """Модель ингредиентов"""
     name = models.CharField('Название', max_length=200)
@@ -21,6 +22,7 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
+
 
 class Recipe(models.Model):
     """Модель рецептов"""
@@ -52,6 +54,7 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+
 class RecipeIngredient(models.Model):
     """Модель связи рецепта и ингредиента"""
     recipe = models.ForeignKey(
@@ -72,6 +75,7 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
+
 
 class Favorite(models.Model):
     """Модель избранных рецептов"""
@@ -98,6 +102,7 @@ class Favorite(models.Model):
             )
         ]
 
+
 class ShoppingCart(models.Model):
     """Модель списка покупок"""
     user = models.ForeignKey(
@@ -121,4 +126,4 @@ class ShoppingCart(models.Model):
                 fields=['user', 'recipe'],
                 name='unique_shopping_cart'
             )
-        ] 
+        ]
