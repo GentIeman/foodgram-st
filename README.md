@@ -28,12 +28,18 @@ nano .env
 ```
 и заполните его следующими переменными окружения:
 ```env
+# Django ключи
+DEBUG=True
+DJANGO_SECRET_KEY=mjb*_8v*o#8ekfyraixg30m%i4^)^5ledikfct@9=n=
+DJANGO_ALLOWED_HOSTS=localhost
+SITE_URL=http://localhost
+
+# PostgreSQL ключи
 POSTGRES_DB=foodgram
-POSTGRES_USER=foodgram_user
-POSTGRES_PASSWORD=foodgram_password
-DB_NAME=foodgram
-DB_HOST=db
-DB_PORT=5432
+POSTGRES_USER=user
+POSTGRES_PASSWORD=1234567890
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
 ```
 
 ### 4. Запуск Docker Compose
@@ -43,16 +49,15 @@ docker-compose up -d
 
 ### 5. Выполнение миграций, сборка статики и создание суперпользователя
 ```bash
-docker-compose exec backend python manage.py makemigrations base
+docker-compose exec backend python manage.py makemigrations recipes users
 docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py collectstatic --noinput
 docker-compose exec backend python manage.py createsuperuser
 ```
 
 ### 6. Заполнение базы ингредиентами
-Ингредиенты загружаются из файла `data/ingredients.json` с помощью команды:
+Ингредиенты загружаются из файла `data/ingredients.csv` с помощью команды:
 ```bash
-docker-compose exec backend python manage.py import_ingredients
+docker-compose exec backend python manage.py load_ingredients
 ```
 
 ### 7. Доступ к приложению
