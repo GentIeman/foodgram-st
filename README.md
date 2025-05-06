@@ -45,7 +45,7 @@ docker-compose up -d
 
 ### 5. Выполнение миграций
 ```bash
-docker-compose exec backend python manage.py makemigrations recipes users
+docker-compose exec backend python manage.py makemigrations
 docker-compose exec backend python manage.py migrate
 ```
 
@@ -61,7 +61,7 @@ docker-compose exec backend python manage.py load_ingredients
 ```
 ### 8. Перезапуск Docker compose
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 ### 9. Доступ к приложению
