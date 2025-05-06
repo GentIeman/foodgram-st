@@ -18,6 +18,10 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Настройки статических файлов
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 # URL сайта
 SITE_URL = os.getenv('SITE_URL', 'http://localhost')
 
