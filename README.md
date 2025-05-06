@@ -49,12 +49,17 @@ docker-compose exec backend python manage.py makemigrations recipes users
 docker-compose exec backend python manage.py migrate
 ```
 
+### 6. Создание суперпользователя
+```bash
+docker-compose exec backend python manage.py createsuperuser
+```
+
 ### 6. Заполнение базы ингредиентами
 Ингредиенты загружаются из файла `data/ingredients.csv` с помощью команды:
 ```bash
 docker-compose exec backend python manage.py load_ingredients
 ```
-### 8. Перезапустите Docker compose
+### 8. Перезапуск Docker compose
 ```bash
 docker-compose up -d
 ```
