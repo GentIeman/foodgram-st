@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models import Count
 
 from .models import (
     Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart
@@ -16,7 +15,7 @@ class RecipeIngredientInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'favorites_count')
     search_fields = ('name', 'author__username')
-    list_filter = ('author', 'name', 'tags')
+    list_filter = ('author', 'name')
     inlines = (RecipeIngredientInline,)
 
     def favorites_count(self, obj):
@@ -42,4 +41,4 @@ class FavoriteAdmin(admin.ModelAdmin):
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
-    list_filter = ('user', 'recipe') 
+    list_filter = ('user', 'recipe')
