@@ -131,11 +131,8 @@ DJOSER = {
         'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
         'current_user': ['rest_framework.permissions.AllowAny'],
         'set_password': ['rest_framework.permissions.IsAuthenticated'],
-        'password_reset': ['rest_framework.permissions.AllowAny'],
-        'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
     },
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
-    'SET_PASSWORD_RETYPE': False,
 }
 
 AUTH_PASSWORD_VALIDATORS = [
