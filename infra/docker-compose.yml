@@ -43,6 +43,7 @@ services:
     volumes:
       - media_volume:/backend/media/
       - static_volume:/backend/static/
+      - ../data:/app/data/
     depends_on:
       - postgres
     env_file:
