@@ -79,9 +79,11 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             user.avatar = data
             user.save()
-            serializer = self.get_serializer(user, context={'request': request})
+            
+            # Return only the avatar URL as required by the schema
+            avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
             return Response(
-                serializer.data,
+                {'avatar': avatar_url},
                 status=status.HTTP_200_OK
             )
         except (ValueError, TypeError, base64.binascii.Error):
