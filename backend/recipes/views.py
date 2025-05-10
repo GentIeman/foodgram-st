@@ -13,6 +13,7 @@ from django.conf import settings
 from django.http import FileResponse, HttpResponse
 from django.db.models import Exists, OuterRef
 from rest_framework import serializers
+from django.http import Http404
 
 from .models import (
     Ingredient,
@@ -228,29 +229,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """Удаление рецепта"""
         try:
-            # Try to get the recipe
-            try:
-                instance = self.get_object()
-            except Exception:
-                # Return 204 if recipe doesn't exist
-                return Response(status=status.HTTP_204_NO_CONTENT)
-                
+            instance = get_object_or_404(Recipe, id=kwargs.get('pk'))
+            
             # Check if user has permission
             if instance.author != request.user:
                 return Response(status=status.HTTP_403_FORBIDDEN)
                 
             # Delete the recipe
-            try:
-                self.perform_destroy(instance)
-            except Exception:
-                # Still return 204 even if there was an error during deletion
-                pass
-                
-            # Always return 204 for successful deletion
+            self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception:
-            # Return 204 for any other errors to match test expectations
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     @action(
         detail=True,
