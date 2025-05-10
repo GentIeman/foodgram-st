@@ -34,6 +34,13 @@ from .permissions import IsAuthorOrReadOnly
 from .utils import generate_shopping_list
 
 
+class CustomPagination(PageNumberPagination):
+    """Пагинация с настраиваемым размером страницы"""
+    page_size = 6
+    page_size_query_param = 'limit'
+    max_page_size = 100
+
+
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для ингредиентов"""
     queryset = Ingredient.objects.all()
@@ -50,7 +57,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     permission_classes = [IsAuthorOrReadOnly]
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от действия"""
