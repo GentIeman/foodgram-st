@@ -47,8 +47,14 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = [AllowAny]
     pagination_class = None
-    filter_backends = (SearchFilter,)
-    search_fields = ('^name',)
+
+    def get_queryset(self):
+        """Получение списка ингредиентов с фильтрацией по имени"""
+        name = self.request.query_params.get('name')
+        queryset = Ingredient.objects.all()
+        if name:
+            queryset = queryset.filter(name__istartswith=name)
+        return queryset.order_by('name')
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
