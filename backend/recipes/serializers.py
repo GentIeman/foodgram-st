@@ -117,10 +117,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class RecipeCreateSerializer(RecipeSerializer):
     """Сериализатор для создания рецепта"""
-    ingredients = serializers.ListField(
-        child=serializers.DictField(),
-        write_only=True
-    )
+    ingredients = RecipeIngredientCreateSerializer(many=True, write_only=True)
     image = Base64ImageField(required=True)
 
     class Meta:
@@ -139,35 +136,21 @@ class RecipeCreateSerializer(RecipeSerializer):
                 'Нужен хотя бы один ингредиент'
             )
         
+        ingredient_ids = []
         for item in value:
-            if 'id' not in item:
-                raise serializers.ValidationError('Отсутствует id ингредиента')
-            if 'amount' not in item:
-                raise serializers.ValidationError('Отсутствует количество ингредиента')
+            ingredient = item['id']
+            amount = item.get('amount')
             
-            try:
-                ingredient_id = int(item['id'])
-                amount = int(item['amount'])
-            except (ValueError, TypeError):
-                raise serializers.ValidationError(
-                    'id и amount должны быть целыми числами'
-                )
-                
-            if amount < 1:
+            if not amount or amount < 1:
                 raise serializers.ValidationError(
                     'Количество ингредиента должно быть положительным числом'
                 )
                 
-            if not Ingredient.objects.filter(id=ingredient_id).exists():
+            if ingredient.id in ingredient_ids:
                 raise serializers.ValidationError(
-                    f'Ингредиент с id={ingredient_id} не найден'
+                    'Ингредиенты не должны повторяться'
                 )
-                
-        ingredient_ids = [int(item['id']) for item in value]
-        if len(ingredient_ids) != len(set(ingredient_ids)):
-            raise serializers.ValidationError(
-                'Ингредиенты не должны повторяться'
-            )
+            ingredient_ids.append(ingredient.id)
             
         return value
 
@@ -183,11 +166,10 @@ class RecipeCreateSerializer(RecipeSerializer):
         """Создание ингредиентов для рецепта"""
         recipe_ingredients = []
         for item in ingredients:
-            ingredient = get_object_or_404(Ingredient, id=item['id'])
             recipe_ingredients.append(
                 RecipeIngredient(
                     recipe=recipe,
-                    ingredient=ingredient,
+                    ingredient=item['id'],
                     amount=item['amount']
                 )
             )
@@ -207,6 +189,15 @@ class RecipeCreateSerializer(RecipeSerializer):
             instance.recipe_ingredients.all().delete()
             self.create_ingredients(instance, ingredients)
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        """Преобразование объекта в словарь"""
+        representation = super().to_representation(instance)
+        representation['ingredients'] = RecipeIngredientSerializer(
+            instance.recipe_ingredients.all(),
+            many=True
+        ).data
+        return representation
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
