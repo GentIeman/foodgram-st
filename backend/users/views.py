@@ -77,8 +77,9 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             user.avatar = data
             user.save()
+            serializer = self.get_serializer(user, context={'request': request})
             return Response(
-                {'avatar': request.build_absolute_uri(user.avatar.url)},
+                serializer.data,
                 status=status.HTTP_200_OK
             )
         except (ValueError, TypeError, base64.binascii.Error):
