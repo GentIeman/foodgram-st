@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 import base64
 from django.core.files.base import ContentFile
 
@@ -16,10 +17,15 @@ from .serializers import (
 User = get_user_model()
 
 
+class CustomPagination(PageNumberPagination):
+    page_size_query_param = 'limit'
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """Представление для пользователей"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
@@ -32,29 +38,68 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Выбор разрешений в зависимости от действия"""
-        if self.action in ['subscribe', 'subscriptions', 'set_password']:
+        if self.action in ['me', 'set_password', 'subscribe', 'subscriptions', 'set_avatar', 'delete_avatar']:
             return [IsAuthenticated()]
         return [AllowAny()]
 
     @action(
         detail=False,
-        methods=['get', 'put', 'patch'],
+        methods=['get'],
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
         """Получение и обновление данных текущего пользователя"""
-        if request.method == 'GET':
-            serializer = self.get_serializer(request.user)
-            return Response(serializer.data)
-
-        serializer = self.get_serializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['put', 'post'],
+        url_path='me/avatar',
+        permission_classes=[IsAuthenticated]
+    )
+    def set_avatar(self, request):
+        """Установка аватара пользователя"""
+        user = request.user
+        avatar_data = request.data.get('avatar')
+
+        if not avatar_data:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            format, imgstr = avatar_data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(
+                base64.b64decode(imgstr),
+                name=f'avatar_{user.id}.{ext}'
+            )
+            user.avatar = data
+            user.save()
+            return Response(
+                {'avatar': request.build_absolute_uri(user.avatar.url)},
+                status=status.HTTP_200_OK
+            )
+        except (ValueError, TypeError, base64.binascii.Error):
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(
+        detail=False,
+        methods=['delete'],
+        url_path='me/avatar',
+        permission_classes=[IsAuthenticated]
+    )
+    def delete_avatar(self, request):
+        user = request.user
+        if user.avatar:
+            if user.avatar.storage.exists(user.avatar.name):
+                user.avatar.delete(save=False)
+            user.avatar = None
+            user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -69,7 +114,6 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             if user == author:
                 return Response(
-                    {'error': 'Нельзя подписаться на самого себя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if Subscription.objects.filter(
@@ -77,7 +121,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 author=author
             ).exists():
                 return Response(
-                    {'error': 'Вы уже подписаны на этого пользователя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Subscription.objects.create(user=user, author=author)
@@ -98,16 +141,13 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=['get'],
-        permission_classes=[IsAuthenticated],
-        url_path='subscriptions',
-        url_name='subscriptions'
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
         """Получение списка подписок"""
-        user = request.user
-        queryset = User.objects.filter(following__user=user)
+        queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
-
+        
         if page is not None:
             serializer = SubscriptionSerializer(
                 page,
@@ -125,43 +165,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['put'],
-        permission_classes=[IsAuthenticated],
-        url_path='me/avatar'
-    )
-    def update_avatar(self, request):
-        """Обновление аватара пользователя"""
-        user = request.user
-        avatar_data = request.data.get('avatar')
-
-        if not avatar_data:
-            return Response(
-                {'error': 'Аватар не предоставлен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            format, imgstr = avatar_data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(
-                base64.b64decode(imgstr),
-                name=f'image.{ext}'
-            )
-            user.avatar = data
-            user.save()
-            serializer = self.get_serializer(user)
-            return Response(serializer.data)
-        except (ValueError, TypeError, base64.binascii.Error):
-            return Response(
-                {'error': 'Некорректный формат изображения'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-    @action(
-        detail=False,
         methods=['post'],
-        permission_classes=[IsAuthenticated],
-        url_path='set_password'
+        permission_classes=[IsAuthenticated]
     )
     def set_password(self, request):
         """Изменение пароля пользователя"""
@@ -171,19 +176,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if not current_password or not new_password:
             return Response(
-                {'error': 'Необходимо указать текущий и новый пароль'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if not user.check_password(current_password):
             return Response(
-                {'error': 'Неверный текущий пароль'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         user.set_password(new_password)
         user.save()
-        return Response(
-            {'message': 'Пароль успешно изменен'},
-            status=status.HTTP_200_OK
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
