@@ -1,6 +1,5 @@
 from django_filters import rest_framework as filters
-from .models import Recipe, Favorite, ShoppingCart
-from django.db.models import Q
+from .models import Recipe
 
 
 class RecipeFilter(filters.FilterSet):
@@ -10,11 +9,10 @@ class RecipeFilter(filters.FilterSet):
         method='filter_is_in_shopping_cart'
     )
     author = filters.NumberFilter(field_name='author__id')
-    tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
 
     class Meta:
         model = Recipe
-        fields = ['is_favorited', 'is_in_shopping_cart', 'author', 'tags']
+        fields = ['is_favorited', 'is_in_shopping_cart', 'author']
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтр по избранному"""
