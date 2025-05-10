@@ -248,6 +248,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
+        """Добавление/удаление рецепта из избранного"""
         try:
             recipe = get_object_or_404(Recipe, id=pk)
             
@@ -260,6 +261,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer = RecipeShortSerializer(recipe)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+            # DELETE method
             favorite = get_object_or_404(
                 Favorite, 
                 user=request.user, 
@@ -268,10 +270,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
             
-        except Exception:
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     @action(
         detail=True,
