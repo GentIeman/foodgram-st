@@ -60,45 +60,45 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = Recipe.objects.all()
         user = self.request.user
 
-        try:
-            if user.is_authenticated:
-                queryset = queryset.annotate(
-                    is_favorited=Exists(
-                        Favorite.objects.filter(
-                            user=user,
-                            recipe=OuterRef('pk')
-                        )
-                    ),
-                    is_in_shopping_cart=Exists(
-                        ShoppingCart.objects.filter(
-                            user=user,
-                            recipe=OuterRef('pk')
-                        )
-                    )
+        # For unauthenticated users, return base queryset with default values
+        if not user.is_authenticated:
+            return queryset.order_by('-pub_date')
+
+        # Add annotations for authenticated users
+        queryset = queryset.annotate(
+            is_favorited=Exists(
+                Favorite.objects.filter(
+                    user=user,
+                    recipe=OuterRef('pk')
                 )
+            ),
+            is_in_shopping_cart=Exists(
+                ShoppingCart.objects.filter(
+                    user=user,
+                    recipe=OuterRef('pk')
+                )
+            )
+        )
 
-                # Фильтрация по is_favorited
-                is_favorited = self.request.query_params.get('is_favorited')
-                if is_favorited is not None:
-                    try:
-                        is_favorited = is_favorited.lower() in ('true', '1', 't', 'y', 'yes')
-                        if is_favorited:
-                            queryset = queryset.filter(favorited_by__user=user)
-                    except (AttributeError, ValueError):
-                        pass
+        # Фильтрация по is_favorited
+        is_favorited = self.request.query_params.get('is_favorited')
+        if is_favorited is not None:
+            try:
+                is_favorited = is_favorited.lower() in ('true', '1', 't', 'y', 'yes')
+                if is_favorited:
+                    queryset = queryset.filter(favorited_by__user=user)
+            except (AttributeError, ValueError):
+                pass
 
-                # Фильтрация по is_in_shopping_cart
-                is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
-                if is_in_shopping_cart is not None:
-                    try:
-                        is_in_shopping_cart = is_in_shopping_cart.lower() in ('true', '1', 't', 'y', 'yes')
-                        if is_in_shopping_cart:
-                            queryset = queryset.filter(in_shopping_cart__user=user)
-                    except (AttributeError, ValueError):
-                        pass
-        except Exception:
-            # Fallback to unfiltered queryset on any error
-            queryset = Recipe.objects.all()
+        # Фильтрация по is_in_shopping_cart
+        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
+        if is_in_shopping_cart is not None:
+            try:
+                is_in_shopping_cart = is_in_shopping_cart.lower() in ('true', '1', 't', 'y', 'yes')
+                if is_in_shopping_cart:
+                    queryset = queryset.filter(in_shopping_cart__user=user)
+            except (AttributeError, ValueError):
+                pass
 
         return queryset.order_by('-pub_date')
 
@@ -262,11 +262,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
             # DELETE method
-            favorite = get_object_or_404(
-                Favorite, 
-                user=request.user, 
-                recipe=recipe
-            )
+            if not Favorite.objects.filter(user=request.user, recipe=recipe).exists():
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+                
+            favorite = Favorite.objects.get(user=request.user, recipe=recipe)
             favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
             
@@ -279,6 +278,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
+        """Добавление/удаление рецепта из списка покупок"""
         try:
             recipe = get_object_or_404(Recipe, id=pk)
             
@@ -291,18 +291,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer = RecipeShortSerializer(recipe)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            shopping_cart = get_object_or_404(
-                ShoppingCart, 
-                user=request.user, 
-                recipe=recipe
-            )
+            # DELETE method
+            if not ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+                
+            shopping_cart = ShoppingCart.objects.get(user=request.user, recipe=recipe)
             shopping_cart.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
             
-        except Exception:
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     @action(
         detail=False,
