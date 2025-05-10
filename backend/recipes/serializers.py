@@ -7,16 +7,31 @@ from .models import (
 import base64
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer as BaseUserSerializer
+from users.models import Subscription
 
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для пользователей"""
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+class UserSerializer(BaseUserSerializer):
+    """Сериализатор для пользователей в рецептах"""
+    is_subscribed = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+
+    class Meta(BaseUserSerializer.Meta):
+        fields = BaseUserSerializer.Meta.fields + ('is_subscribed', 'avatar')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Subscription.objects.filter(user=request.user, author=obj).exists()
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -47,24 +62,6 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
-
-    def create(self, validated_data):
-        ingredient = validated_data.pop('id')
-        return RecipeIngredient.objects.create(
-            ingredient=ingredient,
-            **validated_data
-        )
-
-    def to_representation(self, instance):
-        if isinstance(instance, Ingredient):
-            return {
-                'id': instance.id,
-                'amount': None  # или можно убрать это поле вообще
-            }
-        return {
-            'id': instance.ingredient.id,
-            'amount': instance.amount
-        }
 
 
 class Base64ImageField(serializers.ImageField):
