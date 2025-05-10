@@ -10,7 +10,7 @@ urlpatterns = [
     path('api/', include('recipes.urls')),
 ]
 
-# Добавляем обработку медиа-файлов
+# Обработка медиа-файлов
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,

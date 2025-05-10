@@ -19,7 +19,6 @@ class RecipeFilter(filters.FilterSet):
         user = self.request.user
         if value and user.is_authenticated:
             try:
-                # Convert string to boolean
                 if isinstance(value, str):
                     value = value.lower() in ('true', '1', 't', 'y', 'yes')
                 
@@ -35,7 +34,6 @@ class RecipeFilter(filters.FilterSet):
         user = self.request.user
         if value and user.is_authenticated:
             try:
-                # Convert string to boolean
                 if isinstance(value, str):
                     value = value.lower() in ('true', '1', 't', 'y', 'yes')
                 

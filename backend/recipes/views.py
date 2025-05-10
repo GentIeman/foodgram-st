@@ -75,11 +75,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = Recipe.objects.all()
         user = self.request.user
 
-        # For unauthenticated users, return base queryset with default values
         if not user.is_authenticated:
             return queryset.order_by('-pub_date')
 
-        # Add annotations for authenticated users
         queryset = queryset.annotate(
             is_favorited=Exists(
                 Favorite.objects.filter(
@@ -94,7 +92,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             )
         )
-
         return queryset.order_by('-pub_date')
 
     def perform_create(self, serializer):
@@ -105,7 +102,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        # Re-serialize with full context to include all fields
         instance = serializer.instance
         response_serializer = self.get_serializer(instance, context={'request': request})
         return Response(
@@ -118,19 +114,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)
         
-        # Ensure ingredients are present in the request data
         if 'ingredients' not in request.data:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        # Ensure ingredients is not empty
         if not request.data.get('ingredients'):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check all ingredients exist and have valid amounts
         try:
             for ingredient in request.data.get('ingredients', []):
                 ingredient_id = ingredient.get('id')
@@ -146,7 +139,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Check ingredient exists
                 try:
                     ingredient_id = int(ingredient_id)
                     if not Ingredient.objects.filter(id=ingredient_id).exists():
@@ -158,7 +150,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Check amount is valid
                 try:
                     amount = int(amount)
                     if amount < 1:
@@ -174,14 +165,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        # Check for duplicate ingredients
         ingredient_ids = [int(ingredient.get('id')) for ingredient in request.data.get('ingredients', [])]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        # Check for required fields
         required_fields = ['name', 'text', 'cooking_time']
         for field in required_fields:
             if field not in request.data:
@@ -189,7 +178,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
-        # Validate cooking_time
         try:
             cooking_time = int(request.data.get('cooking_time', 0))
             if cooking_time < 1:
@@ -201,7 +189,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        # Ensure image is present
         if 'image' not in request.data:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
@@ -226,11 +213,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         try:
             instance = get_object_or_404(Recipe, id=kwargs.get('pk'))
             
-            # Check if user has permission
             if instance.author != request.user:
                 return Response(status=status.HTTP_403_FORBIDDEN)
                 
-            # Delete the recipe
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
             
@@ -256,7 +241,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer = RecipeShortSerializer(recipe)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            # DELETE method
             if not Favorite.objects.filter(user=request.user, recipe=recipe).exists():
                 return Response(status=status.HTTP_400_BAD_REQUEST)
                 
@@ -286,7 +270,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer = RecipeShortSerializer(recipe)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            # DELETE method
             if not ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
                 return Response(status=status.HTTP_400_BAD_REQUEST)
                 

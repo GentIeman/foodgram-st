@@ -7,7 +7,7 @@ from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
-    help = 'Load ingredients from CSV file'
+    help = 'Загрузка ингредиентов из CSV файла'
 
     def handle(self, *args, **options):
         # Путь к файлу относительно корня проекта в контейнере
@@ -23,9 +23,9 @@ class Command(BaseCommand):
                         measurement_unit=measurement_unit
                     )
             self.stdout.write(
-                self.style.SUCCESS('Ingredients loaded successfully')
+                self.style.SUCCESS('Ингредиенты успешно загружены')
             )
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'Error loading ingredients: {e}')
+                self.style.ERROR(f'Ошибка при загрузке ингредиентов: {e}')
             )

@@ -80,7 +80,6 @@ class UserViewSet(viewsets.ModelViewSet):
             user.avatar = data
             user.save()
             
-            # Return only the avatar URL as required by the schema
             avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
             return Response(
                 {'avatar': avatar_url},
