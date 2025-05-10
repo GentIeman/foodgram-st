@@ -109,9 +109,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        # Re-serialize with full context to include all fields
+        instance = serializer.instance
+        response_serializer = self.get_serializer(instance, context={'request': request})
         return Response(
-            serializer.data, 
-            status=status.HTTP_201_CREATED, 
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
             headers=headers
         )
 
