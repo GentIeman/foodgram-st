@@ -110,38 +110,38 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         """Подписка/отписка на пользователя"""
         try:
-            author = get_object_or_404(User, pk=pk)
-            user = request.user
-
-            if request.method == 'POST':
-                if user == author:
-                    return Response(
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                if Subscription.objects.filter(
-                    user=user,
-                    author=author
-                ).exists():
-                    return Response(
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                Subscription.objects.create(user=user, author=author)
-                serializer = SubscriptionSerializer(
-                    author,
-                    context={'request': request}
-                )
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-            # DELETE method
-            if not Subscription.objects.filter(user=user, author=author).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            subscription = Subscription.objects.get(user=user, author=author)
-            subscription.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Http404:
+            author = User.objects.get(pk=pk)
+        except User.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+
+        if request.method == 'POST':
+            if user == author:
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if Subscription.objects.filter(
+                user=user,
+                author=author
+            ).exists():
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            Subscription.objects.create(user=user, author=author)
+            serializer = SubscriptionSerializer(
+                author,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # DELETE method
+        if not Subscription.objects.filter(user=user, author=author).exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        subscription = Subscription.objects.get(user=user, author=author)
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
