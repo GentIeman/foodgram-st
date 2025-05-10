@@ -4,6 +4,13 @@ from django.db import models
 
 class User(AbstractUser):
     """Модель пользователя"""
+    username = models.CharField(
+        'Имя пользователя',
+        max_length=150,
+        unique=True,
+        blank=False,
+        null=False
+    )
     email = models.EmailField(
         'Email',
         max_length=254,
@@ -54,6 +61,12 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def delete(self, *args, **kwargs):
+        # Clean up avatar when user is deleted
+        if self.avatar and self.avatar.storage.exists(self.avatar.name):
+            self.avatar.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 class Subscription(models.Model):
