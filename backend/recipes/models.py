@@ -33,7 +33,7 @@ class Recipe(models.Model):
         verbose_name='Автор'
     )
     name = models.CharField('Название', max_length=200)
-    image = models.ImageField('Картинка', upload_to='recipes/')
+    image = models.ImageField('Изображение', upload_to='recipes/')
     text = models.TextField('Описание')
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -54,13 +54,20 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+    def delete(self, *args, **kwargs):
+        # Удаляем изображение при удалении рецепта
+        if self.image and self.image.storage.exists(self.image.name):
+            self.image.delete(save=False)
+        super().delete(*args, **kwargs)
+
 
 class RecipeIngredient(models.Model):
     """Модель связи рецепта и ингредиента"""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
         Ingredient,
@@ -74,7 +81,13 @@ class RecipeIngredient(models.Model):
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
-        verbose_name_plural = 'Ингредиенты в рецептах'
+        verbose_name_plural = 'Ингредиенты в рецепте'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
+        ]
 
 
 class Favorite(models.Model):
@@ -88,7 +101,7 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorites',
+        related_name='favorited_by',
         verbose_name='Рецепт'
     )
 
@@ -114,7 +127,7 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_cart',
+        related_name='in_shopping_cart',
         verbose_name='Рецепт'
     )
 
