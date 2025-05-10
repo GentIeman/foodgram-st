@@ -27,6 +27,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']  # Explicitly allow PUT
 
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от действия"""
@@ -56,6 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=['put', 'post'],
         url_path='me/avatar',
+        url_name='me_avatar',
         permission_classes=[IsAuthenticated]
     )
     def set_avatar(self, request):
