@@ -210,7 +210,9 @@ class RecipeCreateSerializer(RecipeSerializer):
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
-    """Сериализатор для краткого представления рецепта"""
+    """Сокращенный сериализатор для рецептов в подписках"""
+    
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
