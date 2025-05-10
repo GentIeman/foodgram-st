@@ -14,6 +14,7 @@ from django.http import FileResponse, HttpResponse
 from django.db.models import Exists, OuterRef
 from rest_framework import serializers
 from django.http import Http404
+from rest_framework.pagination import PageNumberPagination
 
 from .models import (
     Ingredient,
@@ -49,6 +50,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     permission_classes = [IsAuthorOrReadOnly]
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от действия"""
@@ -79,26 +81,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             )
         )
-
-        # Фильтрация по is_favorited
-        is_favorited = self.request.query_params.get('is_favorited')
-        if is_favorited is not None:
-            try:
-                is_favorited = is_favorited.lower() in ('true', '1', 't', 'y', 'yes')
-                if is_favorited:
-                    queryset = queryset.filter(favorited_by__user=user)
-            except (AttributeError, ValueError):
-                pass
-
-        # Фильтрация по is_in_shopping_cart
-        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
-        if is_in_shopping_cart is not None:
-            try:
-                is_in_shopping_cart = is_in_shopping_cart.lower() in ('true', '1', 't', 'y', 'yes')
-                if is_in_shopping_cart:
-                    queryset = queryset.filter(in_shopping_cart__user=user)
-            except (AttributeError, ValueError):
-                pass
 
         return queryset.order_by('-pub_date')
 
