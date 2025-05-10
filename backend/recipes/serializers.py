@@ -6,7 +6,6 @@ from .models import (
 )
 import base64
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from users.serializers import UserSerializer as BaseUserSerializer
 from users.models import Subscription
 
@@ -25,7 +24,9 @@ class UserSerializer(BaseUserSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Subscription.objects.filter(user=request.user, author=obj).exists()
+        return Subscription.objects.filter(
+            user=request.user, author=obj
+        ).exists()
 
     def get_avatar(self, obj):
         request = self.context.get('request')
@@ -135,23 +136,23 @@ class RecipeCreateSerializer(RecipeSerializer):
             raise serializers.ValidationError(
                 'Нужен хотя бы один ингредиент'
             )
-        
+
         ingredient_ids = []
         for item in value:
             ingredient = item['id']
             amount = item.get('amount')
-            
+
             if not amount or amount < 1:
                 raise serializers.ValidationError(
                     'Количество ингредиента должно быть положительным числом'
                 )
-                
+
             if ingredient.id in ingredient_ids:
                 raise serializers.ValidationError(
                     'Ингредиенты не должны повторяться'
                 )
             ingredient_ids.append(ingredient.id)
-            
+
         return value
 
     def validate_cooking_time(self, value):
@@ -202,7 +203,7 @@ class RecipeCreateSerializer(RecipeSerializer):
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     """Сокращенный сериализатор для рецептов в подписках"""
-    
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')

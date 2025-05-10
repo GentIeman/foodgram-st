@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from django.conf import settings
 from django.core.validators import RegexValidator
 from .models import Subscription
 
@@ -22,7 +21,10 @@ class UserSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
-        return Subscription.objects.filter(user=user, author=obj).exists()
+        return Subscription.objects.filter(
+            user=user,
+            author=obj
+        ).exists()
 
     def get_avatar(self, obj):
         request = self.context.get('request')
@@ -41,7 +43,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+$',
-                message='Username может содержать только буквы, цифры и @/./+/-/_'
+                message=(
+                    'Username может содержать только буквы, '
+                    'цифры и @/./+/-/_'
+                )
             )
         ]
     )

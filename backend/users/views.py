@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -27,7 +26,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
-    http_method_names = ['get', 'post', 'patch', 'put', 'delete']  # Explicitly allow PUT
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от действия"""
@@ -39,7 +38,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Выбор разрешений в зависимости от действия"""
-        if self.action in ['me', 'set_password', 'subscribe', 'subscriptions', 'set_avatar', 'delete_avatar']:
+        if self.action in [
+            'me', 'set_password', 'subscribe',
+            'subscriptions', 'set_avatar', 'delete_avatar'
+        ]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
@@ -79,8 +81,12 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             user.avatar = data
             user.save()
-            
-            avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
+
+            avatar_url = (
+                request.build_absolute_uri(user.avatar.url)
+                if user.avatar
+                else None
+            )
             return Response(
                 {'avatar': avatar_url},
                 status=status.HTTP_200_OK
@@ -155,7 +161,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Получение списка подписок"""
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = SubscriptionSerializer(
                 page,

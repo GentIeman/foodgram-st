@@ -8,9 +8,8 @@ from rest_framework.permissions import (
     AllowAny
 )
 from rest_framework.response import Response
-from rest_framework.filters import SearchFilter
 from django.conf import settings
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.db.models import Exists, OuterRef
 from rest_framework import serializers
 from django.http import Http404
@@ -20,8 +19,7 @@ from .models import (
     Ingredient,
     Recipe,
     Favorite,
-    ShoppingCart,
-    RecipeIngredient
+    ShoppingCart
 )
 from .serializers import (
     IngredientSerializer,
@@ -31,7 +29,6 @@ from .serializers import (
 )
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
-from .utils import generate_shopping_list
 
 
 class CustomPagination(PageNumberPagination):
@@ -103,7 +100,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         instance = serializer.instance
-        response_serializer = self.get_serializer(instance, context={'request': request})
+        response_serializer = self.get_serializer(
+            instance,
+            context={'request': request}
+        )
+
         return Response(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
@@ -113,35 +114,37 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)
-        
+
         if 'ingredients' not in request.data:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         if not request.data.get('ingredients'):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             for ingredient in request.data.get('ingredients', []):
                 ingredient_id = ingredient.get('id')
                 amount = ingredient.get('amount')
-                
+
                 if not ingredient_id:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                    
+
                 if not amount:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 try:
                     ingredient_id = int(ingredient_id)
-                    if not Ingredient.objects.filter(id=ingredient_id).exists():
+                    if not Ingredient.objects.filter(
+                        id=ingredient_id
+                    ).exists():
                         return Response(
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -149,7 +152,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 try:
                     amount = int(amount)
                     if amount < 1:
@@ -164,20 +167,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-        ingredient_ids = [int(ingredient.get('id')) for ingredient in request.data.get('ingredients', [])]
+
+        ingredient_ids = [
+            int(ingredient.get('id'))
+            for ingredient in request.data.get('ingredients', [])
+        ]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         required_fields = ['name', 'text', 'cooking_time']
         for field in required_fields:
             if field not in request.data:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                
+
         try:
             cooking_time = int(request.data.get('cooking_time', 0))
             if cooking_time < 1:
@@ -188,13 +194,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         if 'image' not in request.data:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial
+        )
         try:
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
@@ -212,13 +220,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Удаление рецепта"""
         try:
             instance = get_object_or_404(Recipe, id=kwargs.get('pk'))
-            
+
             if instance.author != request.user:
                 return Response(status=status.HTTP_403_FORBIDDEN)
-                
+
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -231,23 +239,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Добавление/удаление рецепта из избранного"""
         try:
             recipe = get_object_or_404(Recipe, id=pk)
-            
+
             if request.method == 'POST':
-                if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
+                if Favorite.objects.filter(
+                    user=request.user, recipe=recipe
+                ).exists():
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 Favorite.objects.create(user=request.user, recipe=recipe)
                 serializer = RecipeShortSerializer(recipe)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
 
-            if not Favorite.objects.filter(user=request.user, recipe=recipe).exists():
+            if not Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-                
+
             favorite = Favorite.objects.get(user=request.user, recipe=recipe)
             favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -260,23 +275,34 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Добавление/удаление рецепта из списка покупок"""
         try:
             recipe = get_object_or_404(Recipe, id=pk)
-            
+
             if request.method == 'POST':
-                if ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
+                if ShoppingCart.objects.filter(
+                    user=request.user, recipe=recipe
+                ).exists():
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                ShoppingCart.objects.create(user=request.user, recipe=recipe)
+                ShoppingCart.objects.create(
+                    user=request.user,
+                    recipe=recipe
+                )
                 serializer = RecipeShortSerializer(recipe)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED
+                )
 
-            if not ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
+            if not ShoppingCart.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-                
-            shopping_cart = ShoppingCart.objects.get(user=request.user, recipe=recipe)
+
+            shopping_cart = ShoppingCart.objects.get(
+                user=request.user, recipe=recipe
+            )
             shopping_cart.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -288,7 +314,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shopping_cart = ShoppingCart.objects.filter(user=user)
-        
+
         ingredients = {}
         for item in shopping_cart:
             recipe = item.recipe

@@ -21,7 +21,6 @@ class RecipeFilter(filters.FilterSet):
             try:
                 if isinstance(value, str):
                     value = value.lower() in ('true', '1', 't', 'y', 'yes')
-                
                 if value:
                     return queryset.filter(favorited_by__user=user)
                 return queryset
@@ -36,7 +35,6 @@ class RecipeFilter(filters.FilterSet):
             try:
                 if isinstance(value, str):
                     value = value.lower() in ('true', '1', 't', 'y', 'yes')
-                
                 if value:
                     return queryset.filter(in_shopping_cart__user=user)
                 return queryset
