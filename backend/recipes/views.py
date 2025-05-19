@@ -91,9 +91,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return queryset.order_by('-pub_date')
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
     def _handle_add_remove(self, request, pk, model, serializer_class):
         try:
             recipe = get_object_or_404(Recipe, id=pk)
