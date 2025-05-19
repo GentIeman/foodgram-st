@@ -63,7 +63,6 @@ class User(AbstractUser):
         return self.username
 
     def delete(self, *args, **kwargs):
-        # Clean up avatar when user is deleted
         if self.avatar and self.avatar.storage.exists(self.avatar.name):
             self.avatar.delete(save=False)
         super().delete(*args, **kwargs)
