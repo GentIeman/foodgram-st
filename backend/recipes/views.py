@@ -233,12 +233,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def _handle_add_remove(self, request, pk, model, serializer_class):
         try:
             recipe = get_object_or_404(Recipe, id=pk)
+            data = {'user': request.user.id, 'recipe': recipe.id}
+            context = {'request': request}
             if request.method == 'POST':
-                if model.objects.filter(user=request.user, recipe=recipe).exists():
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                serializer = serializer_class(data=data, context=context)
+                serializer.is_valid(raise_exception=True)
                 model.objects.create(user=request.user, recipe=recipe)
-                serializer = serializer_class(recipe)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(RecipeShortSerializer(recipe).data, status=status.HTTP_201_CREATED)
             obj = model.objects.filter(user=request.user, recipe=recipe).first()
             if not obj:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -253,7 +254,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        return self._handle_add_remove(request, pk, Favorite, RecipeShortSerializer)
+        from .serializers import FavoriteSerializer
+        return self._handle_add_remove(request, pk, Favorite, FavoriteSerializer)
 
     @action(
         detail=True,
@@ -261,7 +263,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        return self._handle_add_remove(request, pk, ShoppingCart, RecipeShortSerializer)
+        from .serializers import ShoppingCartSerializer
+        return self._handle_add_remove(request, pk, ShoppingCart, ShoppingCartSerializer)
 
     @action(
         detail=False,
