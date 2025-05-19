@@ -157,7 +157,7 @@ class RecipeCreateSerializer(RecipeSerializer):
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
-        """Создание рецепта"""
+        validated_data['author'] = self.context['request'].user
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         self.create_ingredients(recipe, ingredients)
