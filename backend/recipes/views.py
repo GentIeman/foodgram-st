@@ -70,25 +70,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Recipe.objects.all()
-        user = self.request.user
-
-        if not user.is_authenticated:
-            return queryset.order_by('-pub_date')
-
-        queryset = queryset.annotate(
-            is_favorited=Exists(
-                Favorite.objects.filter(
-                    user=user,
-                    recipe=OuterRef('pk')
-                )
-            ),
-            is_in_shopping_cart=Exists(
-                ShoppingCart.objects.filter(
-                    user=user,
-                    recipe=OuterRef('pk')
-                )
-            )
-        )
         return queryset.order_by('-pub_date')
 
     def _handle_add_remove(self, request, pk, model, serializer_class):
