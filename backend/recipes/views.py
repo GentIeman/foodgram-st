@@ -346,8 +346,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         """Получение ссылки на рецепт"""
         recipe = self.get_object()
-        site_url = settings.SITE_URL
+        absolute_url = request.build_absolute_uri(f"/recipes/{recipe.id}")
         return Response(
-            {"short-link": f"{site_url}/recipes/{recipe.id}"},
+            {"short-link": absolute_url},
             status=status.HTTP_200_OK
         )
