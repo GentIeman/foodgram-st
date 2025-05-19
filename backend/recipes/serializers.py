@@ -135,6 +135,14 @@ class RecipeCreateSerializer(RecipeSerializer):
             raise serializers.ValidationError('Изображение не может быть пустым.')
         return value
 
+    def validate(self, data):
+        # Проверка наличия поля ingredients при создании/обновлении
+        if 'ingredients' not in self.initial_data:
+            raise serializers.ValidationError({
+                'ingredients': 'Это поле обязательно.'
+            })
+        return super().validate(data)
+
     def create_ingredients(self, recipe, ingredients):
         """Создание ингредиентов для рецепта"""
         recipe_ingredients = []
