@@ -236,7 +236,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        """Добавление/удаление рецепта из избранного"""
+        """Добавлени��/удаление рецепта из избранного"""
         try:
             recipe = get_object_or_404(Recipe, id=pk)
 
@@ -313,24 +313,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         user = request.user
-        shopping_cart = ShoppingCart.objects.filter(user=user)
-
-        ingredients = {}
-        for item in shopping_cart:
-            recipe = item.recipe
-            for recipe_ingredient in recipe.recipe_ingredients.all():
-                ingredient = recipe_ingredient.ingredient
-                amount = recipe_ingredient.amount
-                key = (ingredient.name, ingredient.measurement_unit)
-                ingredients[key] = ingredients.get(key, 0) + amount
+        from django.db.models import Sum, F
+        try:
+            ingredients = (
+                Recipe.ingredients.through.objects
+                .filter(recipe__shoppingcart__user=user)
+                .values(name=F('ingredient__name'), unit=F('ingredient__measurement_unit'))
+                .annotate(amount=Sum('amount'))
+                .order_by('name')
+            )
+        except Exception:
+            ingredients = []
 
         shopping_list = ['Список покупок:\n']
-        for (name, unit), amount in ingredients.items():
-            shopping_list.append(f'{name} - {amount} {unit}\n')
+        for ingredient in ingredients:
+            shopping_list.append(f"{ingredient['name']} - {ingredient['amount']} {ingredient['unit']}\n")
 
         response = HttpResponse(
             ''.join(shopping_list),
-            content_type='text/plain'
+            content_type='text/plain',
+            status=status.HTTP_200_OK
         )
         response['Content-Disposition'] = (
             'attachment; filename="shopping_list.txt"'
