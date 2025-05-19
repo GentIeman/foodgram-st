@@ -8,6 +8,7 @@ import base64
 from django.core.files.base import ContentFile
 from users.serializers import UserSerializer
 from users.models import Subscription
+from drf_extra_fields.fields import Base64ImageField
 
 User = get_user_model()
 
@@ -39,16 +40,6 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
-
-
-class Base64ImageField(serializers.ImageField):
-    """Поле для работы с изображениями в формате base64"""
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'temp.{ext}')
-        return super().to_internal_value(data)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -137,6 +128,11 @@ class RecipeCreateSerializer(RecipeSerializer):
             raise serializers.ValidationError(
                 'Время приготовления должно быть не менее 1 минуты'
             )
+        return value
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError('Изображение не может быть пустым.')
         return value
 
     def create_ingredients(self, recipe, ingredients):
