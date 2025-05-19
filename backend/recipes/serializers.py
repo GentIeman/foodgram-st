@@ -174,9 +174,46 @@ class RecipeCreateSerializer(RecipeSerializer):
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
-    """Сокращенный сериализатор для рецептов в подписках"""
+    """Сокращённый сериализатор для рецептов в подписках"""
 
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class BaseUserRecipeRelationSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        user = data['user']
+        recipe = data['recipe']
+        model = self.Meta.model
+        if self.context['request'].method == 'POST' and model.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(self.Meta.already_exists_message)
+        return data
+
+class FavoriteSerializer(BaseUserRecipeRelationSerializer):
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+        already_exists_message = 'Рецепт уже в избранном.'
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=['user', 'recipe'],
+                message=already_exists_message
+            )
+        ]
+
+class ShoppingCartSerializer(BaseUserRecipeRelationSerializer):
+    class Meta:
+        model = ShoppingCart
+        fields = ('user', 'recipe')
+        already_exists_message = 'Рецепт уже в списке покупок.'
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=['user', 'recipe'],
+                message=already_exists_message
+            )
+        ]
+
