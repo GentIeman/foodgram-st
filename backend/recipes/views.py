@@ -216,20 +216,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def destroy(self, request, *args, **kwargs):
-        """Удаление рецепта"""
-        try:
-            instance = get_object_or_404(Recipe, id=kwargs.get('pk'))
-
-            if instance.author != request.user:
-                return Response(status=status.HTTP_403_FORBIDDEN)
-
-            self.perform_destroy(instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
     def _handle_add_remove(self, request, pk, model, serializer_class):
         try:
             recipe = get_object_or_404(Recipe, id=pk)
