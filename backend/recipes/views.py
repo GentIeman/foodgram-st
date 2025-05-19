@@ -230,41 +230,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+    def _handle_add_remove(self, request, pk, model, serializer_class):
+        try:
+            recipe = get_object_or_404(Recipe, id=pk)
+            if request.method == 'POST':
+                if model.objects.filter(user=request.user, recipe=recipe).exists():
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                model.objects.create(user=request.user, recipe=recipe)
+                serializer = serializer_class(recipe)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            obj = model.objects.filter(user=request.user, recipe=recipe).first()
+            if not obj:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
     @action(
         detail=True,
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        """Добавлени��/удаление рецепта из избранного"""
-        try:
-            recipe = get_object_or_404(Recipe, id=pk)
-
-            if request.method == 'POST':
-                if Favorite.objects.filter(
-                    user=request.user, recipe=recipe
-                ).exists():
-                    return Response(
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                Favorite.objects.create(user=request.user, recipe=recipe)
-                serializer = RecipeShortSerializer(recipe)
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-
-            if not Favorite.objects.filter(
-                user=request.user, recipe=recipe
-            ).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            favorite = Favorite.objects.get(user=request.user, recipe=recipe)
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        return self._handle_add_remove(request, pk, Favorite, RecipeShortSerializer)
 
     @action(
         detail=True,
@@ -272,39 +261,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        """Добавление/удаление рецепта из списка покупок"""
-        try:
-            recipe = get_object_or_404(Recipe, id=pk)
-
-            if request.method == 'POST':
-                if ShoppingCart.objects.filter(
-                    user=request.user, recipe=recipe
-                ).exists():
-                    return Response(
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                ShoppingCart.objects.create(
-                    user=request.user,
-                    recipe=recipe
-                )
-                serializer = RecipeShortSerializer(recipe)
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED
-                )
-
-            if not ShoppingCart.objects.filter(
-                user=request.user, recipe=recipe
-            ).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            shopping_cart = ShoppingCart.objects.get(
-                user=request.user, recipe=recipe
-            )
-            shopping_cart.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        return self._handle_add_remove(request, pk, ShoppingCart, RecipeShortSerializer)
 
     @action(
         detail=False,
