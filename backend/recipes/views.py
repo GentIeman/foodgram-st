@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     IsAuthenticated,
@@ -14,6 +14,7 @@ from django.db.models import Exists, OuterRef
 from rest_framework import serializers
 from django.http import Http404
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.filters import SearchFilter
 
 from .models import (
     Ingredient,
@@ -27,8 +28,11 @@ from .serializers import (
     RecipeCreateSerializer,
     RecipeShortSerializer
 )
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from .permissions import IsAuthorOrReadOnly
+
+from .serializers import ShoppingCartSerializer
+from .serializers import FavoriteSerializer
 
 
 class CustomPagination(PageNumberPagination):
@@ -42,16 +46,12 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для ингредиентов"""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    filterset_class = IngredientFilter
     permission_classes = [AllowAny]
     pagination_class = None
-
-    def get_queryset(self):
-        """Получение списка ингредиентов с фильтрацией по имени"""
-        name = self.request.query_params.get('name')
-        queryset = Ingredient.objects.all()
-        if name:
-            queryset = queryset.filter(name__istartswith=name)
-        return queryset.order_by('name')
+# Без DjangoFilterBackend падает get_ingredients_list_with_name_filter // User
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    search_fields = ['^name']
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -96,7 +96,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        from .serializers import FavoriteSerializer
         return self._handle_add_remove(request, pk, Favorite, FavoriteSerializer)
 
     @action(
@@ -105,7 +104,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        from .serializers import ShoppingCartSerializer
         return self._handle_add_remove(request, pk, ShoppingCart, ShoppingCartSerializer)
 
     @action(
