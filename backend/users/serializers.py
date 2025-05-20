@@ -126,3 +126,28 @@ class AvatarSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    """Сериализатор для подписки на автора"""
+    class Meta:
+        model = Subscription
+        fields = ('user', 'author')
+
+    def validate(self, attrs):
+        user = attrs.get('user')
+        author = attrs.get('author')
+
+        if user == author:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя'
+            )
+
+        if Subscription.objects.filter(
+            user=user, author=author
+        ).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписаны на этого пользователя'
+            )
+
+        return attrs
+
