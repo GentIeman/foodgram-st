@@ -80,8 +80,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def delete_avatar(self, request):
         user = request.user
         if user.avatar:
-            if user.avatar.storage.exists(user.avatar.name):
-                user.avatar.delete(save=False)
+            user.avatar.delete(save=False)
             user.avatar = None
             user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
