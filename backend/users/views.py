@@ -11,7 +11,7 @@ from django.core.files.base import ContentFile
 from .models import Subscription
 from .serializers import (
     UserSerializer, UserCreateSerializer,
-    SubscriptionSerializer, AvatarSerializer
+    SubscriptionSerializer, AvatarSerializer, SubscribeSerializer
 )
 
 User = get_user_model()
@@ -94,27 +94,21 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         """Подписка/отписка на пользователя"""
         author = get_object_or_404(User, pk=pk)
-
         user = request.user
 
         if request.method == 'POST':
-            if user == author:
-                return Response(
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if Subscription.objects.filter(
-                user=user,
-                author=author
-            ).exists():
-                return Response(
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            Subscription.objects.create(user=user, author=author)
-            serializer = SubscriptionSerializer(
+            serializer = SubscribeSerializer(data={
+                'user': user.id,
+                'author': author.id
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            subscription_serializer = SubscriptionSerializer(
                 author,
                 context={'request': request}
             )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(subscription_serializer.data, status=status.HTTP_201_CREATED)
 
         # DELETE method
         if not Subscription.objects.filter(user=user, author=author).exists():
