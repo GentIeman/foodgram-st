@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from .models import Subscription
 from .serializers import (
     UserSerializer, UserCreateSerializer,
-    SubscriptionSerializer
+    SubscriptionSerializer, AvatarSerializer
 )
 
 User = get_user_model()
@@ -65,36 +65,11 @@ class UserViewSet(viewsets.ModelViewSet):
     def set_avatar(self, request):
         """Установка аватара пользователя"""
         user = request.user
-        avatar_data = request.data.get('avatar')
-
-        if not avatar_data:
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            format, imgstr = avatar_data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(
-                base64.b64decode(imgstr),
-                name=f'avatar_{user.id}.{ext}'
-            )
-            user.avatar = data
-            user.save()
-
-            avatar_url = (
-                request.build_absolute_uri(user.avatar.url)
-                if user.avatar
-                else None
-            )
-            return Response(
-                {'avatar': avatar_url},
-                status=status.HTTP_200_OK
-            )
-        except (ValueError, TypeError, base64.binascii.Error):
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer = AvatarSerializer(user, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False,
