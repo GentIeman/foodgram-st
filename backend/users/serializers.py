@@ -3,6 +3,8 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import RegexValidator
 from .models import Subscription
+from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
+from drf_extra_fields.fields import Base64ImageField
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         return ""
 
 
-class UserCreateSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(DjoserUserCreateSerializer):
     email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
@@ -110,3 +112,17 @@ class SubscriptionSerializer(UserSerializer):
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField()
+
+    class Meta:
+        model = get_user_model()
+        fields = ('avatar',)
+
+    def update(self, instance, validated_data):
+        instance.avatar = validated_data.get('avatar', instance.avatar)
+        instance.save()
+        return instance
+
