@@ -11,7 +11,8 @@ from django.core.files.base import ContentFile
 from .models import Subscription
 from .serializers import (
     UserSerializer, UserCreateSerializer,
-    SubscriptionSerializer, AvatarSerializer, SubscribeSerializer
+    SubscriptionSerializer, AvatarSerializer,
+    SubscribeSerializer, UnsubscribeSerializer
 )
 
 User = get_user_model()
@@ -110,9 +111,11 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             return Response(subscription_serializer.data, status=status.HTTP_201_CREATED)
 
-        # DELETE method
-        if not Subscription.objects.filter(user=user, author=author).exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = UnsubscribeSerializer(data={
+            'user': user.id,
+            'author': author.id
+        })
+        serializer.is_valid(raise_exception=True)
 
         subscription = Subscription.objects.get(user=user, author=author)
         subscription.delete()
