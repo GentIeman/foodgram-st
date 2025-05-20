@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -92,10 +93,7 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def subscribe(self, request, pk=None):
         """Подписка/отписка на пользователя"""
-        try:
-            author = User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        author = get_object_or_404(User, pk=pk)
 
         user = request.user
 
