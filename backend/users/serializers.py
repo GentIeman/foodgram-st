@@ -2,17 +2,18 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import RegexValidator
-from .models import Subscription
+from .models import Subscription, User
 from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
+from djoser.serializers import UserSerializer as BaseUserSerializer
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(BaseUserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
-    class Meta:
-        model = get_user_model()
+    class Meta(BaseUserSerializer.Meta):
+        model = User
         fields = (
             'id', 'username', 'first_name',
             'last_name', 'email', 'is_subscribed',
@@ -33,55 +34,6 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.avatar and hasattr(obj.avatar, 'url'):
             return request.build_absolute_uri(obj.avatar.url)
         return ""
-
-
-class UserCreateSerializer(DjoserUserCreateSerializer):
-    email = serializers.EmailField(required=True)
-    first_name = serializers.CharField(required=True, max_length=150)
-    last_name = serializers.CharField(required=True, max_length=150)
-    username = serializers.CharField(
-        required=True,
-        max_length=150,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+$',
-                message=(
-                    'Username может содержать только буквы, '
-                    'цифры и @/./+/-/_'
-                )
-            )
-        ]
-    )
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        validators=[validate_password]
-    )
-
-    class Meta:
-        model = get_user_model()
-        fields = (
-            'email', 'id', 'username', 'first_name',
-            'last_name', 'password'
-        )
-
-    def validate_username(self, value):
-        if get_user_model().objects.filter(username=value).exists():
-            raise serializers.ValidationError(
-                'Пользователь с таким username уже существует.'
-            )
-        return value
-
-    def validate_email(self, value):
-        if get_user_model().objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                'Пользователь с таким email уже существует.'
-            )
-        return value
-
-    def create(self, validated_data):
-        user = get_user_model().objects.create_user(**validated_data)
-        return user
 
 
 class SubscriptionSerializer(UserSerializer):
