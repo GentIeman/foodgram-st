@@ -5,12 +5,13 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from djoser.serializers import UserCreateSerializer
 import base64
 from django.core.files.base import ContentFile
 
 from .models import Subscription
 from .serializers import (
-    UserSerializer, UserCreateSerializer,
+    UserSerializer,
     SubscriptionSerializer, AvatarSerializer,
     SubscribeSerializer, UnsubscribeSerializer
 )
@@ -145,6 +146,3 @@ class UserViewSet(viewsets.ModelViewSet):
             context={'request': request}
         )
         return Response(serializer.data)
-
-    # Удален метод set_password, так как эта функциональность
-    # должна быть доступна через URL-маршруты Djoser
