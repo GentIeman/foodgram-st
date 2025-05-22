@@ -101,26 +101,31 @@ class SubscribeSerializer(serializers.ModelSerializer):
                 'Вы уже подписаны на этого пользователя'
             )
 
-        return attrs
-
-
-class UnsubscribeSerializer(serializers.Serializer):
-    """Сериализатор для отписки от автора"""
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=get_user_model().objects.all()
-    )
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=get_user_model().objects.all()
-    )
-
-    def validate(self, attrs):
-        user = attrs.get('user')
-        author = attrs.get('author')
-
         if not Subscription.objects.filter(user=user, author=author).exists():
             raise serializers.ValidationError(
                 'Вы не подписаны на этого пользователя'
             )
 
         return attrs
+
+
+# class UnsubscribeSerializer(serializers.Serializer):
+#     """Сериализатор для отписки от автора"""
+#     user = serializers.PrimaryKeyRelatedField(
+#         queryset=get_user_model().objects.all()
+#     )
+#     author = serializers.PrimaryKeyRelatedField(
+#         queryset=get_user_model().objects.all()
+#     )
+#
+#     def validate(self, attrs):
+#         user = attrs.get('user')
+#         author = attrs.get('author')
+#
+#         if not Subscription.objects.filter(user=user, author=author).exists():
+#             raise serializers.ValidationError(
+#                 'Вы не подписаны на этого пользователя'
+#             )
+#
+#         return attrs
 
