@@ -31,7 +31,7 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['username', 'email', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
 
     class Meta:
         verbose_name = 'Пользователь'
