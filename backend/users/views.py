@@ -13,7 +13,7 @@ from .models import Subscription
 from .serializers import (
     UserSerializer,
     SubscriptionSerializer, AvatarSerializer,
-    SubscribeSerializer, UnsubscribeSerializer
+    SubscribeSerializer
 )
 
 User = get_user_model()
@@ -112,7 +112,7 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             return Response(subscription_serializer.data, status=status.HTTP_201_CREATED)
 
-        serializer = UnsubscribeSerializer(data={
+        serializer = SubscriptionSerializer(data={
             'user': user.id,
             'author': author.id
         })
