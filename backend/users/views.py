@@ -1,19 +1,15 @@
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import status, permissions, serializers
+from rest_framework import status, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from djoser.views import UserViewSet as DjoserUserViewSet
-from djoser.serializers import UserCreateSerializer
-import base64
-from django.core.files.base import ContentFile
 
 from .models import Subscription, User
 from .serializers import (
     SubscriptionSerializer, AvatarSerializer,
-    SubscribeSerializer, UserSerializer
+    SubscribeSerializer
 )
 
 
@@ -66,10 +62,12 @@ class UserViewSet(DjoserUserViewSet):
         user = request.user
 
         if request.method == 'POST':
-            serializer = SubscribeSerializer(data={
-                'user': user.id,
-                'author': author.id
-            })
+            serializer = SubscribeSerializer(
+                data={
+                    'user': user.id,
+                    'author': author.id
+                }
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
@@ -77,7 +75,10 @@ class UserViewSet(DjoserUserViewSet):
                 author,
                 context={'request': request}
             )
-            return Response(subscription_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                subscription_serializer.data,
+                status=status.HTTP_201_CREATED
+            )
 
         subscription = Subscription.objects.filter(
             user=user,
@@ -94,10 +95,10 @@ class UserViewSet(DjoserUserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
-        """Получение списка подписок"""
-        queryset = User.objects.filter(following__user=request.user)
+        """Получение подписок пользователя"""
+        user = request.user
+        queryset = User.objects.filter(following__user=user)
         page = self.paginate_queryset(queryset)
-
         if page is not None:
             serializer = SubscriptionSerializer(
                 page,
@@ -105,7 +106,6 @@ class UserViewSet(DjoserUserViewSet):
                 context={'request': request}
             )
             return self.get_paginated_response(serializer.data)
-
         serializer = SubscriptionSerializer(
             queryset,
             many=True,
