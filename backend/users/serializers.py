@@ -1,9 +1,9 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Subscription, User
 from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from recipes.models import Recipe
+
 
 class UserSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField()
@@ -32,6 +32,7 @@ class UserSerializer(DjoserUserSerializer):
             return request.build_absolute_uri(obj.avatar.url)
         return ""
 
+
 class RecipeShortSerializer(serializers.ModelSerializer):
     """Сокращённый сериализатор для рецептов в подписках"""
 
@@ -39,6 +40,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
+
 
 class SubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
@@ -87,6 +89,7 @@ class AvatarSerializer(serializers.ModelSerializer):
             instance.avatar = None
             instance.save()
         return instance
+
 
 class SubscribeSerializer(serializers.ModelSerializer):
     """Сериализатор для подписки на автора"""
