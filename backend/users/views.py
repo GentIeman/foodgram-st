@@ -41,8 +41,6 @@ class UserViewSet(DjoserUserViewSet):
         detail=False,
         methods=['put', 'post'],
         url_path='me/avatar',
-        url_name='me_avatar',
-        permission_classes=[IsAuthenticated]
     )
     def set_avatar(self, request):
         """Установка аватара пользователя"""
