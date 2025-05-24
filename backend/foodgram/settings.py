@@ -100,15 +100,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Настройки REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 6,
-    'PAGINATE_BY_PARAM': 'limit',
 }
 
 # Указываем кастомную модель пользователя
@@ -118,16 +116,10 @@ AUTH_USER_MODEL = 'users.User'
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
-    'USER_CREATE_PASSWORD_RETYPE': True,
     'SERIALIZERS': {
-        'user': 'users.serializers.UserSerializer'
-    },
-    'PERMISSIONS': {
-        'user': ['rest_framework.permissions.AllowAny'],
-        'token_create': ['rest_framework.permissions.AllowAny'],
-        'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
-    },
-    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
+        'user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+    }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
