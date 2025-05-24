@@ -8,13 +8,9 @@ from rest_framework.permissions import (
     AllowAny
 )
 from rest_framework.response import Response
-from django.conf import settings
 from django.http import HttpResponse
-from django.db.models import Exists, OuterRef
-from rest_framework import serializers
 from django.http import Http404
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.filters import SearchFilter
 
 from .models import (
     Ingredient,
@@ -82,8 +78,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer = serializer_class(data=data, context=context)
                 serializer.is_valid(raise_exception=True)
                 model.objects.create(user=request.user, recipe=recipe)
-                return Response(RecipeShortSerializer(recipe).data, status=status.HTTP_201_CREATED)
-            obj = model.objects.filter(user=request.user, recipe=recipe).first()
+                return Response(
+                    RecipeShortSerializer(recipe).data,
+                    status=status.HTTP_201_CREATED
+                )
+            obj = model.objects.filter(
+                user=request.user,
+                recipe=recipe
+            ).first()
             if not obj:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             obj.delete()
@@ -97,7 +99,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        return self._handle_add_remove(request, pk, Favorite, FavoriteSerializer)
+        return self._handle_add_remove(
+            request, pk, Favorite, FavoriteSerializer
+        )
 
     @action(
         detail=True,
@@ -105,7 +109,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        return self._handle_add_remove(request, pk, ShoppingCart, ShoppingCartSerializer)
+        return self._handle_add_remove(
+            request, pk, ShoppingCart, ShoppingCartSerializer
+        )
 
     @action(
         detail=False,
@@ -119,7 +125,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             ingredients = (
                 Recipe.ingredients.through.objects
                 .filter(recipe__shoppingcart__user=user)
-                .values(name=F('ingredient__name'), unit=F('ingredient__measurement_unit'))
+                .values(
+                    name=F('ingredient__name'),
+                    unit=F('ingredient__measurement_unit')
+                )
                 .annotate(amount=Sum('amount'))
                 .order_by('name')
             )
@@ -128,7 +137,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         shopping_list = ['Список покупок:\n']
         for ingredient in ingredients:
-            shopping_list.append(f"{ingredient['name']} - {ingredient['amount']} {ingredient['unit']}\n")
+            shopping_list.append(
+                f"{ingredient['name']} - "
+                f"{ingredient['amount']} {ingredient['unit']}\n"
+            )
 
         response = HttpResponse(
             ''.join(shopping_list),
@@ -149,7 +161,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         """Получение ссылки на рецепт"""
         recipe = self.get_object()
-        absolute_url = request.build_absolute_uri(f"/recipes/{recipe.id}")
+        absolute_url = request.build_absolute_uri(
+            f"/recipes/{recipe.id}"
+        )
         return Response(
             {"short-link": absolute_url},
             status=status.HTTP_200_OK
