@@ -6,11 +6,9 @@ from .models import (
 )
 import base64
 from django.core.files.base import ContentFile
-from users.serializers import UserSerializer
 from users.models import Subscription
 from drf_extra_fields.fields import Base64ImageField
-
-User = get_user_model()
+from users.serializers import UserSerializer
 
 class IngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов"""
@@ -181,15 +179,6 @@ class RecipeCreateSerializer(RecipeSerializer):
         return representation
 
 
-class RecipeShortSerializer(serializers.ModelSerializer):
-    """Сокращённый сериализатор для рецептов в подписках"""
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
-        read_only_fields = ('id', 'name', 'image', 'cooking_time')
-
-
 class BaseUserRecipeRelationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = data['user']
@@ -224,4 +213,3 @@ class ShoppingCartSerializer(BaseUserRecipeRelationSerializer):
                 message=already_exists_message
             )
         ]
-
