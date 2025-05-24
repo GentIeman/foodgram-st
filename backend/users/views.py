@@ -9,14 +9,12 @@ from djoser.serializers import UserCreateSerializer
 import base64
 from django.core.files.base import ContentFile
 
-from .models import Subscription
+from .models import Subscription, User
 from .serializers import (
     UserSerializer,
     SubscriptionSerializer, AvatarSerializer,
     SubscribeSerializer
 )
-
-User = get_user_model()
 
 
 class CustomPagination(PageNumberPagination):
