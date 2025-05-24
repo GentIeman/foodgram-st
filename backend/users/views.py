@@ -13,7 +13,7 @@ from django.core.files.base import ContentFile
 from .models import Subscription, User
 from .serializers import (
     SubscriptionSerializer, AvatarSerializer,
-    SubscribeSerializer
+    SubscribeSerializer, UserSerializer
 )
 
 
@@ -26,53 +26,43 @@ class UserViewSet(DjoserUserViewSet):
     pagination_class = CustomPagination
 
     def get_permissions(self):
-        """Выбор разрешений в зависимости от действия"""
-        if self.action in [
-            'me', 'subscribe', 'subscriptions',
-            'set_avatar', 'delete_avatar'
-        ]:
-            return [IsAuthenticated()]
-        return [AllowAny()]
-
-    def perform_create(self, serializer, *args, **kwargs):
-        super().perform_create(serializer)
+        """Получение прав доступа"""
+        if self.action == 'retrieve' or self.action == 'list':
+            return [permissions.IsAuthenticatedOrReadOnly()]
+        return super().get_permissions()
 
     @action(
         detail=False,
-        methods=['put', 'post'],
-        url_path='me/avatar',
-    )
-    def set_avatar(self, request):
-        """Установка аватара пользователя"""
-        user = request.user
-        serializer = AvatarSerializer(user, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(
-        detail=False,
-        methods=['delete'],
+        methods=['put', 'delete'],
         url_path='me/avatar',
         permission_classes=[IsAuthenticated]
     )
-    def delete_avatar(self, request):
+    def avatar(self, request):
+        """Установка аватара пользователя"""
         user = request.user
-        if user.avatar:
-            user.avatar.delete(save=False)
-            user.avatar = None
-            user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(
+                user,
+                data=request.data,
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == 'DELETE':
+            serializer = AvatarSerializer()
+            serializer.delete(user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=True,
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated]
     )
-    def subscribe(self, request, pk=None):
+    def subscribe(self, request, id=None):
         """Подписка/отписка на пользователя"""
-        author = get_object_or_404(User, pk=pk)
+        author = get_object_or_404(User, id=id)
         user = request.user
 
         if request.method == 'POST':
@@ -89,13 +79,12 @@ class UserViewSet(DjoserUserViewSet):
             )
             return Response(subscription_serializer.data, status=status.HTTP_201_CREATED)
 
-        serializer = SubscriptionSerializer(data={
-            'user': user.id,
-            'author': author.id
-        })
-        serializer.is_valid(raise_exception=True)
-
-        subscription = Subscription.objects.get(user=user, author=author)
+        subscription = Subscription.objects.filter(
+            user=user,
+            author=author
+        ).first()
+        if not subscription:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
