@@ -1,17 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import status, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from djoser.views import UserViewSet as DjoserUserViewSet
 from djoser.serializers import UserCreateSerializer
 import base64
 from django.core.files.base import ContentFile
 
 from .models import Subscription, User
 from .serializers import (
-    UserSerializer,
     SubscriptionSerializer, AvatarSerializer,
     SubscribeSerializer
 )
@@ -21,21 +21,9 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = 'limit'
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(DjoserUserViewSet):
     """Представление для пользователей"""
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
     pagination_class = CustomPagination
-    permission_classes = [AllowAny]
-    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
-
-    def get_serializer_class(self):
-        """Выбор сериализатора в зависимости от действия"""
-        if self.action == 'create':
-            return UserCreateSerializer
-        elif self.action in ['subscriptions', 'subscribe']:
-            return SubscriptionSerializer
-        return UserSerializer
 
     def get_permissions(self):
         """Выбор разрешений в зависимости от действия"""
@@ -46,15 +34,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    @action(
-        detail=False,
-        methods=['get'],
-        permission_classes=[IsAuthenticated]
-    )
-    def me(self, request):
-        """Получение и обновление данных текущего пользователя"""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+    def perform_create(self, serializer, *args, **kwargs):
+        super().perform_create(serializer)
 
     @action(
         detail=False,
