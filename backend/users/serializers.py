@@ -81,6 +81,12 @@ class AvatarSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def delete(self, instance):
+        if instance.avatar:
+            instance.avatar.delete(save=False)
+            instance.avatar = None
+            instance.save()
+        return instance
 
 class SubscribeSerializer(serializers.ModelSerializer):
     """Сериализатор для подписки на автора"""
