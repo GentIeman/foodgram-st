@@ -1,9 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
-from django.core.validators import RegexValidator
 from .models import Subscription, User
-from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserSerializer as BaseUserSerializer
 
