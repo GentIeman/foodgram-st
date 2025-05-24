@@ -26,8 +26,10 @@ from .serializers import (
     IngredientSerializer,
     RecipeSerializer,
     RecipeCreateSerializer,
-    RecipeShortSerializer
 )
+
+from users.serializers import RecipeShortSerializer
+
 from .filters import RecipeFilter, IngredientFilter
 from .permissions import IsAuthorOrReadOnly
 
