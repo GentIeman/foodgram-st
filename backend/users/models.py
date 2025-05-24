@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 from .constants import USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH, FIRST_NAME_MAX_LENGTH, LAST_NAME_MAX_LENGTH
 
@@ -8,7 +9,14 @@ class User(AbstractUser):
     username = models.CharField(
         'Имя пользователя',
         max_length=USERNAME_MAX_LENGTH,
-        unique=True
+        unique=True,
+        # Без такой проверки падает тест user_registration_with_invalid_username
+        validators=[
+            RegexValidator(
+                regex=r"^[\w.@+-]+$",
+                message=("Допустимы только буквы, цифры и @/./+/-/_"),
+            )
+        ],
     )
     email = models.EmailField(
         'Email',
@@ -30,8 +38,8 @@ class User(AbstractUser):
         blank=True
     )
 
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
     class Meta:
         verbose_name = 'Пользователь'
