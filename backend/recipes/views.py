@@ -31,6 +31,7 @@ from .permissions import IsAuthorOrReadOnly
 
 from .serializers import ShoppingCartSerializer
 from .serializers import FavoriteSerializer
+from django.db.models import Sum, F
 
 
 class CustomPagination(PageNumberPagination):
@@ -120,7 +121,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         user = request.user
-        from django.db.models import Sum, F
         try:
             ingredients = (
                 Recipe.ingredients.through.objects
