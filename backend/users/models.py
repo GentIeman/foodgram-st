@@ -49,11 +49,6 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
-    def delete(self, *args, **kwargs):
-        if self.avatar and self.avatar.storage.exists(self.avatar.name):
-            self.avatar.delete(save=False)
-        super().delete(*args, **kwargs)
-
 
 class Subscription(models.Model):
     """Модель подписки"""
