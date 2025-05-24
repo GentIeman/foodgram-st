@@ -2,14 +2,14 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Subscription, User
 from drf_extra_fields.fields import Base64ImageField
-from djoser.serializers import UserSerializer as BaseUserSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
+from recipes.models import Recipe
 
-
-class UserSerializer(BaseUserSerializer):
+class UserSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
-    class Meta(BaseUserSerializer.Meta):
+    class Meta(DjoserUserSerializer.Meta):
         model = User
         fields = (
             'id', 'username', 'first_name',
@@ -32,13 +32,20 @@ class UserSerializer(BaseUserSerializer):
             return request.build_absolute_uri(obj.avatar.url)
         return ""
 
+class RecipeShortSerializer(serializers.ModelSerializer):
+    """Сокращённый сериализатор для рецептов в подписках"""
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
 
 class SubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = get_user_model()
+        model = User
         fields = (
             'email', 'id', 'username', 'first_name',
             'last_name', 'is_subscribed', 'recipes',
@@ -46,7 +53,6 @@ class SubscriptionSerializer(UserSerializer):
         )
 
     def get_recipes(self, obj):
-        from recipes.serializers import RecipeShortSerializer
         request = self.context.get('request')
         recipes_limit = request.query_params.get('recipes_limit')
         recipes = obj.recipes.all()
@@ -67,7 +73,7 @@ class AvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField()
 
     class Meta:
-        model = get_user_model()
+        model = User
         fields = ('avatar',)
 
     def update(self, instance, validated_data):
