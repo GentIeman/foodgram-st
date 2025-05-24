@@ -1,14 +1,11 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
 from .models import (
     Ingredient, Recipe, RecipeIngredient,
     Favorite, ShoppingCart
 )
-import base64
-from django.core.files.base import ContentFile
-from users.models import Subscription
 from drf_extra_fields.fields import Base64ImageField
 from users.serializers import UserSerializer
+
 
 class IngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов"""
@@ -130,7 +127,9 @@ class RecipeCreateSerializer(RecipeSerializer):
 
     def validate_image(self, value):
         if not value:
-            raise serializers.ValidationError('Изображение не может быть пустым.')
+            raise serializers.ValidationError(
+                'Изображение не может быть пустым.'
+            )
         return value
 
     def validate(self, data):
@@ -184,9 +183,12 @@ class BaseUserRecipeRelationSerializer(serializers.ModelSerializer):
         user = data['user']
         recipe = data['recipe']
         model = self.Meta.model
-        if self.context['request'].method == 'POST' and model.objects.filter(user=user, recipe=recipe).exists():
+
+        if (self.context['request'].method == 'POST'
+                and model.objects.filter(user=user, recipe=recipe).exists()):
             raise serializers.ValidationError(self.Meta.already_exists_message)
         return data
+
 
 class FavoriteSerializer(BaseUserRecipeRelationSerializer):
     class Meta:
@@ -200,6 +202,7 @@ class FavoriteSerializer(BaseUserRecipeRelationSerializer):
                 message=already_exists_message
             )
         ]
+
 
 class ShoppingCartSerializer(BaseUserRecipeRelationSerializer):
     class Meta:
