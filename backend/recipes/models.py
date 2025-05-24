@@ -1,8 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
-
-User = get_user_model()
+from users.models import User
 
 
 class Ingredient(models.Model):
@@ -116,6 +114,7 @@ class UserRecipeRelation(models.Model):
             )
         ]
 
+
 class Favorite(UserRecipeRelation):
     """Модель избранных рецептов"""
     class Meta(UserRecipeRelation.Meta):
@@ -127,6 +126,7 @@ class Favorite(UserRecipeRelation):
         related_name='favorited_by',
         verbose_name='Рецепт'
     )
+
 
 class ShoppingCart(UserRecipeRelation):
     """Модель списка покупок"""
