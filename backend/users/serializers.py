@@ -104,10 +104,4 @@ class SubscribeSerializer(serializers.ModelSerializer):
                 'Вы уже подписаны на этого пользователя'
             )
 
-        if not Subscription.objects.filter(user=user, author=author).exists():
-            raise serializers.ValidationError(
-                'Вы не подписаны на этого пользователя'
-            )
-
         return attrs
-
